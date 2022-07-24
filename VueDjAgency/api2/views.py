@@ -136,3 +136,10 @@ class PostRetrieveAPIView(RetrieveAPIView):
         }
         serializer = self.get_serializer(instance=data) # 데이터를 serializer에게 공급, 직렬화X -> instance=data
         return Response(serializer.data)
+    
+    def get_serializer_context(self):
+        return {
+            'request': None,
+            'format': self.format_kwarg,
+            'view': self
+        }
