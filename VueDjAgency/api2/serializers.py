@@ -20,6 +20,9 @@ class PostListSerializer(serializers.ModelSerializer):
         fields = ['id','title','image','like','category']
 
 class PostRetrieveSerializer(serializers.ModelSerializer):
+    category=serializers.StringRelatedField()
+    tags=serializers.StringRelatedField(many=True)
+    
     class Meta:
         model = Post
         exclude=['create_dt'] #create_dt 빼고 다 보내줌
