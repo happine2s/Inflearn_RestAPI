@@ -17,6 +17,8 @@
 
 from collections import OrderedDict
 from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView
+
+from api.views import obj_to_comment, obj_to_post, prev_next_post
 from .serializers import CateTagSerializer, CommentSerializer, PostListSerializer, PostRetrieveSerializer, PostSerializerDetail
 from blog.models import Post,Comment,Category, Tag
 from rest_framework.response import Response
@@ -121,25 +123,44 @@ def get_prev_next(instance):
 
 
 class PostRetrieveAPIView(RetrieveAPIView):
-    queryset = Post.objects.all()
-    serializer_class = PostSerializerDetail
+    #queryset = Post.objects.all()
+    #serializer_class = PostSerializerDetail
+
+    def get_queryset(self):
+        return Post.objects.all().select_related('category').prefetch_related('tags','comment_set')
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        prevInstance, nextInstance=get_prev_next(instance)
+        #prevInstance, nextInstance=get_prev_next(instance)
         commentList=instance.comment_set.all()
-        data={
-            'post':instance,
-            'prevPost':prevInstance,
-            'nextPost':nextInstance,
-            'commentList':commentList,
+
+        postDict=obj_to_post(instance)
+        prevDict, nextDict=prev_next_post(instance)
+        commentDict=[obj_to_comment(c) for c in commentList]
+
+        dataDict={
+            'post':postDict,
+            'prevPost':prevDict,
+            'nextPost':nextDict,
+            'commentList':commentDict,
         }
-        serializer = self.get_serializer(instance=data) # 데이터를 serializer에게 공급, 직렬화X -> instance=data
-        return Response(serializer.data)
+
+        return Response(dataDict)
+
+        # serializer 사용한 직렬화
+        # data={
+        #     'post':instance,
+        #     'prevPost':prevInstance,
+        #     'nextPost':nextInstance,
+        #     'commentList':commentList,
+        # }
+        # serializer = self.get_serializer(instance=data) # 데이터를 serializer에게 공급, 직렬화X -> instance=data
+        # return Response(serializer.data)
+
     
-    def get_serializer_context(self):
-        return {
-            'request': None,
-            'format': self.format_kwarg,
-            'view': self
-        }
+    # def get_serializer_context(self):
+    #     return {
+    #         'request': None,
+    #         'format': self.format_kwarg,
+    #         'view': self
+    #     }
